@@ -1,0 +1,164 @@
+1. Sự thông thương giữa các bảng trong CSDL:
+- Bảng LUI_TOI có khóa ngoại là thuộc tính "ten" tham chiếu đến bảng NGUOI_AN.
+- Bảng AN có khóa ngoại là thuộc tính "ten" tham chiếu đến bảng NGUOI_AN.
+- Bảng PHUC_VU có khóa ngoại là thuộc tính "quanPizza" tham chiếu đến bảng LUI_TOI và thuộc tính "pizza" tham chiếu đến bảng AN.
+
+2. Script SQL để tìm các bánh pizza đã được phục vụ tại quán "Pizza Hut":
+```
+SELECT pizza
+FROM PHUC_VU
+WHERE quanPizza = 'Pizza Hut';
+```
+
+3. Script SQL để liệt kê danh sách tất cả các bánh pizza mà các quán đều có bán:
+```
+SELECT DISTINCT pizza
+FROM PHUC_VU
+GROUP BY pizza
+HAVING COUNT(DISTINCT quanPizza) = (SELECT COUNT(*) FROM LUI_TOI);
+```
+
+4. Script SQL để tìm tên các quán pizza có phục vụ các bánh pizza mà tên gồm chữ "m":
+```
+SELECT DISTINCT quanPizza
+FROM PHUC_VU
+WHERE pizza IN (
+  SELECT DISTINCT pizza
+  FROM PHUC_VU
+  WHERE pizza LIKE '%m%'
+);
+```
+
+5. Script SQL để tìm tên và tuổi của người ăn đã đến quán "Dominos" và sắp xếp kết quả giảm dần theo tuổi:
+```
+SELECT NGUOI_AN.ten, NGUOI_AN.tuoi
+FROM NGUOI_AN
+INNER JOIN LUI_TOI ON NGUOI_AN.ten = LUI_TOI.ten
+WHERE LUI_TOI.quanPizza = 'Dominos'
+ORDER BY NGUOI_AN.tuoi DESC;
+```
+
+6. Script SQL để tìm tên quán pizza và số lượng bánh pizza mà mỗi quán phục vụ:
+```
+SELECT quanPizza, COUNT(pizza) AS soBanPizza
+FROM PHUC_VU
+GROUP BY quanPizza;
+```
+1. Bảng NGUOI_AN có mối quan hệ một-nhiều với bảng LUI_TOI qua thuộc tính "ten".
+2. Bảng AN có mối quan hệ một-nhiều với bảng NGUOI_AN qua thuộc tính "ten".
+3. Bảng PHUC_VU có mối quan hệ một-nhiều với bảng LUI_TOI qua thuộc tính "quanPizza" và mối quan hệ một-nhiều với bảng AN qua thuộc tính "pizza".
+4. Bảng PHUC_VU có mối quan hệ nhiều-nhiều với bảng AN thông qua bảng trung gian LUI_TOI.
+
+(Note: This is a database schema for a pizza restaurant with four tables: NGUOI_AN (people who eat pizza), LUI_TOI (places people go to eat pizza), AN (types of pizza people like to eat), and PHUC_VU (pizzas served by pizza restaurants). The questions below are written in Vietnamese, so I will answer them in Vietnamese as well.)
+
+2. SELECT pizza FROM PHUC_VU WHERE quanPizza = 'Pizza Hut';
+3. SELECT DISTINCT pizza FROM PHUC_VU;
+4. SELECT DISTINCT quanPizza FROM PHUC_VU WHERE quanPizza LIKE '%m%';
+5. SELECT NGUOI_AN.ten, NGUOI_AN.tuoi FROM NGUOI_AN JOIN LUI_TOI ON NGUOI_AN.ten = LUI_TOI.ten WHERE LUI_TOI.quanPizza = 'Dominos' ORDER BY NGUOI_AN.tuoi DESC;
+6. SELECT PHUC_VU.quanPizza, COUNT(DISTINCT PHUC_VU.pizza) FROM PHUC_VU GROUP BY PHUC_VU.quanPizza;
+7. SELECT PHUC_VU.quanPizza FROM PHUC_VU WHERE PHUC_VU.gia = (SELECT MAX(gia) FROM PHUC_VU);
+8. SELECT DISTINCT LUI_TOI.quanPizza FROM LUI_TOI JOIN AN ON LUI_TOI.ten = AN.ten WHERE AN.pizza = 'Ian';
+9. SELECT DISTINCT LUI_TOI.quanPizza FROM LUI_TOI JOIN AN ON LUI_TOI.ten = AN.ten WHERE AN.pizza NOT IN (SELECT AN.pizza FROM AN JOIN NGUOI_AN ON AN.ten = NGUOI_AN.ten WHERE NGUOI_AN.ten = 'Eli');
+10. SELECT DISTINCT LUI_TOI.quanPizza FROM LUI_TOI JOIN AN ON LUI_TOI.ten = AN.ten WHERE AN.pizza NOT IN (SELECT AN.pizza FROM AN JOIN NGUOI_AN ON AN.ten = NGUOI_AN.ten WHERE NGUOI_AN.ten = 'Eli') AND LUI_TOI.quanPizza NOT IN (SELECT LUI_TOI.quanPizza FROM LUI_TOI JOIN AN ON LUI_TOI.ten = AN.ten WHERE AN.pizza IN (SELECT AN.pizza FROM AN JOIN NGUOI_AN ON AN.ten = NGUOI_AN.ten WHERE NGUOI_AN.ten = 'Eli'));
+11. SELECT PHUC_VU.quanPizza FROM PHUC_VU WHERE PHUC_VU.gia > (SELECT MAX(gia) FROM PHUC_VU WHERE PHUC_VU.quanPizza = 'New York Pizza');
+12. SELECT DISTINCT PHUC_VU.quan
+
+
+Để giải quyết các câu hỏi trên, bạn sẽ cần phải sử dụng các truy vấn SQL để thao tác với CSDL đã cho. Dưới đây là các truy vấn tương ứng với các câu hỏi:
+
+1. Thêm khóa chính cho các bảng đã cho và thêm các ràng buộc đề cập:
+
+```sql
+ALTER TABLE NGUOI_AN ADD CONSTRAINT PK_NGUOI_AN PRIMARY KEY (ten);
+ALTER TABLE LUI_TOI ADD CONSTRAINT FK_LUI_TOI_NGUOI_AN FOREIGN KEY (ten) REFERENCES NGUOI_AN (ten);
+ALTER TABLE AN ADD CONSTRAINT FK_AN_NGUOI_AN FOREIGN KEY (ten) REFERENCES NGUOI_AN (ten);
+ALTER TABLE PHUC_VU ADD CONSTRAINT CK_PHUC_VU_GIA CHECK (gia > 0);
+```
+
+2. Tìm tên các quán chỉ phục vụ các bánh có giá nhỏ hơn 10:
+
+```sql
+SELECT quanPizza 
+FROM PHUC_VU
+GROUP BY quanPizza
+HAVING MAX(gia) < 10;
+```
+
+3. Tìm tên bánh được phục vụ bởi quán 'New York Pizza' và quán 'Dominos':
+
+```sql
+SELECT pizza 
+FROM PHUC_VU
+WHERE quanPizza IN ('New York Pizza', 'Dominos');
+```
+
+4. Tìm tên bánh được phục vụ bởi quán 'Little Caesars' và không phục vụ bởi quán 'Pizza Hut':
+
+```sql
+SELECT pizza 
+FROM PHUC_VU
+WHERE quanPizza = 'Little Caesars' 
+AND pizza NOT IN (
+    SELECT pizza 
+    FROM PHUC_VU
+    WHERE quanPizza = 'Pizza Hut'
+);
+```
+
+5. Tìm tên các quán có phục vụ tất cả các loại bánh pizza:
+
+```sql
+SELECT quanPizza
+FROM PHUC_VU
+GROUP BY quanPizza
+HAVING COUNT(*) = (SELECT COUNT(DISTINCT pizza) FROM PHUC_VU);
+```
+
+6. Tên quán phục vụ ít nhất 2 bánh pizza mà 'Gus' thích:
+
+```sql
+SELECT quanPizza
+FROM PHUC_VU
+WHERE pizza IN (SELECT pizza FROM AN WHERE ten = 'Gus')
+GROUP BY quanPizza
+HAVING COUNT(*) >= 2;
+```
+
+7. Tìm tên các quán có phục vụ tất cả các bánh mà 'Ian' thích:
+
+```sql
+SELECT quanPizza
+FROM PHUC_VU
+WHERE pizza IN (SELECT pizza FROM AN WHERE ten = 'Ian')
+GROUP BY quanPizza
+HAVING COUNT(*) = (SELECT COUNT(*) FROM AN WHERE ten = 'Ian');
+```
+
+8. Tên người ăn lui tới ít nhất 3 quán:
+
+```sql
+SELECT ten
+FROM LUI_TOI
+GROUP BY ten
+HAVING COUNT(*) >= 3;
+```
+
+9. Tính số loại pizza mà mỗi quán có bán:
+
+```sql
+SELECT quanPizza, COUNT(*) as so_loai_pizza
+FROM PHUC_VU
+GROUP BY quanPizza;
+```
+
+10. Tìm tên người ăn thích các bánh ít nhất là giống các bánh mà Hil thích:
+
+```sql
+SELECT A.ten
+FROM AN A
+JOIN AN Hil ON A.pizza = Hil.pizza AND Hil.ten = 'Hil'
+GROUP BY A.ten
+HAVING COUNT(*) >= (SELECT COUNT(*) FROM AN WHERE ten = 'Hil');
+```
+
+Bạn cần chạy các truy vấn trên trong một công cụ quản lý CSDL như SQL Server Management Studio hoặc MySQL Workbench, tuỳ thuộc vào hệ thống quản lý cơ sở dữ liệu mà bạn đang sử dụng.
